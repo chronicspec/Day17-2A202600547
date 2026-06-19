@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab Day 2 — Test Hypothesis Rẻ Hơn | Arionear</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #121a28;
+      --border: #2a3a52;
+      --text: #eef2f8;
+      --muted: #8fa3bf;
+      --accent: #3b82f6;
+      --accent2: #8b5cf6;
+      --green: #22c55e;
+      --red: #f87171;
+      --amber: #fbbf24;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .deck { width: 100vw; height: 100vh; position: relative; }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2.5rem 4.5rem 3.5rem;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(40px);
+      transition: opacity .4s, transform .4s, visibility .4s;
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .slide.prev { transform: translateX(-40px); }
+
+    .tag {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .6rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 2.85rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: .5rem;
+    }
+
+    h2 {
+      font-size: clamp(1.35rem, 2.8vw, 2rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .subtitle { font-size: 1.05rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .meta { font-size: .88rem; color: var(--muted); margin-top: 1.5rem; }
+
+    .quote {
+      font-size: clamp(1rem, 1.8vw, 1.3rem);
+      font-weight: 600;
+      line-height: 1.55;
+      padding: 1.25rem 1.5rem;
+      border-left: 4px solid var(--accent);
+      background: var(--surface);
+      border-radius: 0 12px 12px 0;
+      margin: .75rem 0;
+    }
+
+    .quote.small { font-size: .95rem; font-weight: 500; }
+    .quote.amber { border-color: var(--amber); }
+    .quote.green { border-color: var(--green); }
+    .quote.purple { border-color: var(--accent2); font-style: italic; font-weight: 500; }
+
+    .highlight { color: var(--accent); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: .75rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+    }
+
+    .card h3 { font-size: .9rem; font-weight: 700; margin-bottom: .45rem; }
+    .card p, .card li { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+    .card.pass { border-color: rgba(34,197,94,.4); }
+    .card.fail { border-color: rgba(248,113,113,.4); }
+    .card.pass h3 { color: var(--green); }
+    .card.fail h3 { color: var(--red); }
+
+    ul.bullets { list-style: none; margin-top: .75rem; }
+    ul.bullets li {
+      padding: .4rem 0 .4rem 1.4rem;
+      position: relative;
+      font-size: .95rem;
+      color: var(--muted);
+    }
+    ul.bullets li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    ol.pattern { margin-top: .75rem; padding-left: 1.25rem; }
+    ol.pattern li { padding: .3rem 0; font-size: .88rem; color: var(--muted); }
+    ol.pattern strong { color: var(--text); }
+
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: .75rem;
+    }
+
+    .compare-box {
+      border-radius: 12px;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem;
+      line-height: 1.55;
+    }
+
+    .compare-box.chatgpt { background: #1a1520; border: 1px solid #4a3050; }
+    .compare-box.arionear { background: #0f1a14; border: 1px solid #2a5040; }
+
+    .compare-box .label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .6rem;
+    }
+
+    .compare-box.chatgpt .label { color: #c084fc; }
+    .compare-box.arionear .label { color: var(--green); }
+
+    .diff-del { color: var(--red); text-decoration: line-through; }
+    .diff-add { color: var(--green); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+      margin-top: .75rem;
+    }
+
+    th, td {
+      padding: .55rem .75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--surface);
+      color: var(--muted);
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+      padding: 1.1rem .75rem;
+      background: var(--surface);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .stat .num {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat .lbl { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+
+    .verdict {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      margin-top: 1rem;
+      padding: .6rem 1.25rem;
+      background: rgba(34,197,94,.15);
+      border: 2px solid var(--green);
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--green);
+    }
+
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+      font-size: .8rem;
+    }
+
+    .flow span {
+      padding: .45rem .85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .flow .arrow { color: var(--muted); border: none; background: none; }
+
+    .expensive { text-decoration: line-through; color: var(--red); opacity: .85; }
+    .cheap { color: var(--green); font-weight: 600; }
+
+    .summary-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      max-width: 680px;
+      font-size: .92rem;
+      line-height: 1.7;
+    }
+
+    .summary-card .row {
+      padding: .65rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .summary-card .row:last-child { border-bottom: none; }
+
+    .check { color: var(--green); font-weight: 700; }
+    .uncheck { color: var(--muted); }
+
+    .note { font-size: .82rem; color: var(--muted); margin-top: .5rem; }
+
+    .nav-hint {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.5rem;
+      font-size: .72rem;
+      color: var(--muted);
+      z-index: 100;
+    }
+
+    .progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .3s;
+      z-index: 100;
+    }
+
+    .slide-num {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 1.5rem;
+      font-size: .78rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      z-index: 100;
+    }
+
+    .proto-links {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .75rem;
+      margin-top: 1.25rem;
+    }
+
+    a.proto-link {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .85rem 1rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color .2s, background .2s;
+    }
+
+    a.proto-link:hover {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, .08);
+    }
+
+    a.proto-link .pl-num {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .25rem;
+    }
+
+    a.proto-link .pl-title {
+      font-size: .88rem;
+      font-weight: 600;
+      margin-bottom: .2rem;
+    }
+
+    a.proto-link .pl-open {
+      font-size: .72rem;
+      color: var(--green);
+    }
+
+    .proto-hub {
+      margin-top: .75rem;
+      font-size: .82rem;
+    }
+
+    .proto-hub a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px dashed var(--accent);
+    }
+
+    .proto-hub a:hover { color: var(--text); }
+
+    @media (max-width: 900px) {
+      .slide { padding: 2rem 1.25rem 3rem; }
+      .grid-2, .grid-3, .compare { grid-template-columns: 1fr; }
+      .proto-links { grid-template-columns: 1fr; }
+      table { font-size: .7rem; }
+    }
+
+    @media print {
+      .slide {
+        position: relative;
+        page-break-after: always;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        height: auto;
+        min-height: 100vh;
+      }
+      .nav-hint, .progress, .slide-num { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="slide-num" id="slideNum">1 / 11</div>
+  <div class="nav-hint">← → hoặc Space · F fullscreen</div>
+
+  <div class="deck" id="deck">
+
+    <!-- 1. Title -->
+    <section class="slide active">
+      <div class="tag">Lab Day 2 · Day 16</div>
+      <h1>Test Hypothesis<br /><span class="highlight">Rẻ Hơn</span></h1>
+      <p class="subtitle">Arionear</p>
+    </section>
+
+    <!-- 2. Hypothesis H1 -->
+    <section class="slide">
+      <div class="tag">Bước 1 · Hypothesis H1</div>
+      <h2>Chúng tôi giả định gì?</h2>
+      <div class="quote">
+        Khi sửa paper bằng AI, sinh viên / nghiên cứu sinh <strong>sợ ChatGPT làm đổi số liệu hoặc ý chính</strong> — họ muốn <strong>nhìn thấy AI sửa chỗ nào</strong> (diff đỏ/xanh) trước khi chấp nhận.
+      </div>
+      <div class="quote small amber">
+        Viết ngắn: <strong>User sợ AI sửa paper "làm bậy" → cần diff để tin.</strong>
+      </div>
+      <p class="note">Vì sao chọn: dễ hiểu — ai cũng từng copy-paste ChatGPT sửa paper.</p>
+    </section>
+
+    <!-- 3. Cách đắt -->
+    <section class="slide">
+      <div class="tag">Bước 2 · Cách đắt</div>
+      <h2>Team định test thế nào?</h2>
+      <div class="flow">
+        <span>Làm xong web/app</span>
+        <span class="arrow">→</span>
+        <span>User thật dùng vài tuần</span>
+        <span class="arrow">→</span>
+        <span>Đếm Accept vs Reject</span>
+        <span class="arrow">→</span>
+        <span>Phỏng vấn 5 người</span>
+        <span class="arrow">→</span>
+        <span>Mới biết user có tin diff không</span>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>⏱ Thời gian</h3>
+          <p class="expensive">2–4 tuần</p>
+        </div>
+        <div class="card">
+          <h3>💰 Cần gì</h3>
+          <p>User thật, server chạy ổn, bảng thống kê Accept/Reject</p>
+        </div>
+        <div class="card">
+          <h3>⚠ Rủi ro</h3>
+          <p>Build xong mới hỏi — nếu sai thì mất nhiều công sức</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 3 cách rẻ -->
+    <section class="slide">
+      <div class="tag">Bước 3 · 3 cách rẻ</div>
+      <h2>Test cùng H1 — không cần deploy</h2>
+      <table>
+        <thead>
+          <tr><th>Cách</th><th>Làm gì</th><th>Mất bao lâu</th><th>Deploy?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>① Hỏi + so ảnh</strong></td>
+            <td>Form + slide 2 cột (ChatGPT vs diff)</td>
+            <td>~1 giờ cả lớp</td>
+            <td style="color:var(--green)">Không</td>
+          </tr>
+          <tr>
+            <td><strong>② Sửa hộ</strong></td>
+            <td>Nhận đoạn → Quick Edit → trả ảnh diff</td>
+            <td>~30 phút</td>
+            <td style="color:var(--green)">Không</td>
+          </tr>
+          <tr>
+            <td><strong>③ Ngồi xem</strong></td>
+            <td>1 bạn dùng live · quan sát Accept/Reject</td>
+            <td>20 phút</td>
+            <td style="color:var(--green)">Không</td>
+          </tr>
+        </tbody>
+      </table>
+      <ul class="bullets" style="margin-top:1rem">
+        <li>Cách 1: Google Form 3 câu — tin hơn? dùng vào paper? lo gì nhất?</li>
+        <li>Cách 2: nhắn 3 bạn gửi đoạn paper → chọn Đồng ý / Không</li>
+        <li>Cách 3: think-aloud — diff có giúp yên tâm hơn paste ChatGPT không?</li>
+      </ul>
+      <div class="proto-links">
+        <a class="proto-link" href="prototype/cach1-hoi-so-anh.html" target="_blank" rel="noopener">
+          <div class="pl-num">Cách 1</div>
+          <div class="pl-title">Hỏi + so ảnh</div>
+          <div class="pl-open">Mở prototype →</div>
+        </a>
+        <a class="proto-link" href="prototype/cach2-sua-ho.html" target="_blank" rel="noopener">
+          <div class="pl-num">Cách 2</div>
+          <div class="pl-title">Sửa hộ</div>
+          <div class="pl-open">Mở prototype →</div>
+        </a>
+        <a class="proto-link" href="prototype/cach3-ngoi-xem.html" target="_blank" rel="noopener">
+          <div class="pl-num">Cách 3</div>
+          <div class="pl-title">Ngồi xem</div>
+          <div class="pl-open">Mở prototype →</div>
+        </a>
+      </div>
+      <p class="proto-hub">Hoặc <a href="prototype/index.html" target="_blank" rel="noopener">xem tất cả prototype</a></p>
+    </section>
+
+    <!-- 6. Prototype demo -->
+    <section class="slide">
+      <div class="tag">Bước 4 · Prototype</div>
+      <h2>Demo — cùng 1 đoạn văn mẫu</h2>
+      <div class="compare">
+        <div class="compare-box chatgpt">
+          <div class="label">ChatGPT — copy-paste thẳng</div>
+          Gốc (ẩn):<br />
+          "The result show that our model is better.<br />
+          The accuracy is higher about 15%."<br /><br />
+          Output mới — không thấy sửa gì:<br />
+          "The results demonstrate that our model performs better, with approximately 15% higher accuracy."
+        </div>
+        <div class="compare-box arionear">
+          <div class="label">Arionear — diff đỏ/xanh</div>
+          <span class="diff-del">The result show that our model is better.</span><br />
+          <span class="diff-del">The accuracy is higher about 15%.</span><br /><br />
+          <span class="diff-add">The results demonstrate that our model performs better,</span><br />
+          <span class="diff-add">with approximately 15% higher accuracy.</span>
+        </div>
+      </div>
+      <p class="note">Trong buổi lab: chiếu slide → 5 người điền Form → đếm kết quả 10 phút.</p>
+    </section>
+
+    <!-- 7. Kết quả Cách 1 -->
+    <section class="slide">
+      <div class="tag">Bước 4 · Kết quả Cách 1</div>
+      <h2>Hỏi + so ảnh — 5 người cùng bàn</h2>
+      <table>
+        <thead>
+          <tr><th>Bạn</th><th>Tin hơn?</th><th>Sẽ dùng vào paper?</th><th>Lo gì nhất?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Văn Dương</td>
+            <td>Arionear diff</td>
+            <td>Arionear</td>
+            <td>"ChatGPT đổi số liệu mà mình không biết"</td>
+          </tr>
+          <tr>
+            <td>Thái Dương</td>
+            <td>Arionear diff</td>
+            <td>Tự sửa (tham khảo diff)</td>
+            <td>"Không thấy AI sửa chỗ nào thì không dám paste"</td>
+          </tr>
+          <tr>
+            <td>Minh Anh</td>
+            <td>Không tin cả hai</td>
+            <td>Tự sửa</td>
+            <td>"Cả hai đều có thể paraphrase làm lệch ý"</td>
+          </tr>
+          <tr>
+            <td>Lan</td>
+            <td>Arionear diff</td>
+            <td>Arionear</td>
+            <td>"Sợ AI thêm claim mới"</td>
+          </tr>
+          <tr>
+            <td>Tài</td>
+            <td>Arionear diff</td>
+            <td>Arionear</td>
+            <td>"Copy ChatGPT xong mới đọc lại — muộn"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="stat-row">
+        <div class="stat"><div class="num">4/5</div><div class="lbl">tin diff hơn</div></div>
+        <div class="stat"><div class="num">3/5</div><div class="lbl">sẽ dùng Arionear vào paper</div></div>
+      </div>
+    </section>
+
+    <!-- 8. Kết quả Cách 2 -->
+    <section class="slide">
+      <div class="tag">Bước 4 · Kết quả Cách 2</div>
+      <h2>Sửa hộ (Concierge) — 3 bạn</h2>
+      <div class="quote small" style="margin-bottom:.75rem">
+        "Gửi mình 1 đoạn tiếng Anh trong paper bạn đang viết (3–5 câu). Mình sửa bằng Arionear, trả lại ảnh diff — bạn chọn <strong>Đồng ý</strong> hay <strong>Không</strong>."
+      </div>
+      <table>
+        <thead>
+          <tr><th>Bạn</th><th>Đoạn gửi</th><th>Accept?</th><th>Lý do</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Minh Anh</td>
+            <td>Discussion — kết quả thí nghiệm</td>
+            <td style="color:var(--green)">✅ Accept</td>
+            <td>"Thấy rõ chỗ sửa, số 15% vẫn giữ nguyên — yên tâm hơn ChatGPT"</td>
+          </tr>
+          <tr>
+            <td>Văn Dương</td>
+            <td>Abstract viết vội</td>
+            <td style="color:var(--green)">✅ Accept</td>
+            <td>"Văn phong học thuật hơn, diff cho biết AI không đổi ý chính"</td>
+          </tr>
+          <tr>
+            <td>Lan</td>
+            <td>Introduction đoạn 2</td>
+            <td style="color:var(--red)">❌ Reject</td>
+            <td>"Diff sửa quá nhiều chỗ nhỏ — muốn tự chọn từng câu, không Accept cả khối"</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="stat-row">
+        <div class="stat"><div class="num">2/3</div><div class="lbl">Accept</div></div>
+      </div>
+    </section>
+
+    <!-- 9. Kết quả Cách 3 -->
+    <section class="slide">
+      <div class="tag">Bước 4 · Kết quả Cách 3</div>
+      <h2>Ngồi xem live — Thái Dương</h2>
+      <table>
+        <thead>
+          <tr><th>Quan sát</th><th>Ghi chú</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Có đọc phần đỏ/xanh?</td>
+            <td>✅ Có — đọc kỹ phần xanh trước, quay lại đỏ để so</td>
+          </tr>
+          <tr>
+            <td>Bấm Accept hay Reject?</td>
+            <td>✅ Accept sau ~45 giây</td>
+          </tr>
+          <tr>
+            <td>Nói gì về ChatGPT?</td>
+            <td><em>"ChatGPT paste xong mới hoảng — diff này thấy trước nên yên tâm hơn. Nhưng vẫn đọc lại 1 lần vì không tin 100%."</em></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="stat-row">
+        <div class="stat"><div class="num">1/1</div><div class="lbl">tin diff hơn</div></div>
+        <div class="stat"><div class="num">1/1</div><div class="lbl">Accept</div></div>
+      </div>
+    </section>
+
+    <!-- 10. Tổng hợp -->
+    <section class="slide">
+      <div class="tag">Bước 4 · Tổng hợp</div>
+      <h2>3 cách — 1 kết luận</h2>
+      <table>
+        <thead>
+          <tr><th>Cách</th><th>Số người</th><th>Tin diff hơn ChatGPT</th><th>Accept diff</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1. Hỏi + so ảnh</td><td>5</td><td><strong>4/5</strong></td><td><strong>3/5</strong></td></tr>
+          <tr><td>2. Sửa hộ</td><td>3</td><td>—</td><td><strong>2/3</strong></td></tr>
+          <tr><td>3. Ngồi xem</td><td>1</td><td><strong>1/1</strong></td><td><strong>1/1</strong></td></tr>
+        </tbody>
+      </table>
+      <ol class="pattern">
+        <li><strong>Lo #1:</strong> AI đổi số liệu / claim mà user không biết (4/5 người nhắc)</li>
+        <li><strong>Diff giúp:</strong> thấy trước khi apply → yên tâm hơn ChatGPT (4/5 + 2/3 Accept)</li>
+        <li><strong>Ngoại lệ:</strong> Minh Anh không tin cả hai — cần đọc lại tay; Lan Reject vì muốn control từng câu</li>
+      </ol>
+      <div class="verdict">✅ Đúng — tiếp tục build Arionear với diff + human gate</div>
+      <p class="note" style="margin-top:.75rem">
+        Điều cần sửa sau test: Accept <strong>từng câu</strong> trong diff (Lan Reject vì không muốn apply cả khối) — sửa UX, không sửa hypothesis.
+      </p>
+    </section>
+
+    <!-- 11. Slide 1 trang (Present) -->
+    <section class="slide">
+      <div class="tag">Bước 5 · Present ~90 giây</div>
+      <h2>Tóm tắt 1 trang</h2>
+      <div class="summary-card">
+        <div class="row">
+          <strong>H1:</strong> User sợ AI sửa paper "làm bậy" → Cần diff đỏ/xanh để tin?
+        </div>
+        <div class="row">
+          <strong>Đắt:</strong> Đợi user dùng app vài tuần<br />
+          <strong>Rẻ:</strong> ① So ảnh + Form &nbsp; ② Sửa hộ &nbsp; ③ Xem live
+        </div>
+        <div class="row">
+          <strong>Kết quả:</strong> 4/5 tin diff · 2/3 Accept<br />
+          <span class="check">[x] Đúng</span> &nbsp;
+          <span class="uncheck">[ ] Sai</span> &nbsp;
+          <span class="uncheck">[ ] Chưa rõ</span>
+        </div>
+        <div class="row">
+          <strong>Next:</strong> Accept từng câu trong diff
+        </div>
+      </div>
+      <ul class="bullets" style="margin-top:1.25rem">
+        <li><strong>20s</strong> Hypothesis — sợ ChatGPT đổi số liệu/ý chính, cần diff để tin</li>
+        <li><strong>15s</strong> Cách đắt — 2–4 tuần đếm Accept/Reject</li>
+        <li><strong>30s</strong> 3 cách rẻ — Form, sửa hộ, ngồi xem · không deploy</li>
+        <li><strong>15s</strong> Kết quả — 4/5 tin diff · lo nhất = AI đổi số liệu</li>
+        <li><strong>10s</strong> Bước tiếp — diff + guardrail · Accept từng câu</li>
+      </ul>
+    </section>
+
+    <!-- 12. Ghi nhớ + Q&A -->
+    <section class="slide">
+      <div class="tag">Bước tiếp · Ghi nhớ</div>
+      <h2>Next step</h2>
+      <ul class="bullets">
+        <li><strong>Giữ</strong> hướng diff + guardrail — fear "AI làm bậy" là thật</li>
+        <li><strong>UX:</strong> Accept <em>từng câu</em> trong diff (feedback từ Lan)</li>
+        <li><strong>Sau:</strong> analytics production · accept rate · recruit user ngoài cohort</li>
+      </ul>
+      <div class="quote small green" style="margin-top:1.5rem">
+        <strong>Hypothesis đơn giản = dễ test rẻ.</strong><br />
+        Không cần đợi app hoàn hảo mới hỏi user — hỏi bằng ảnh diff + Form cũng đủ để biết hướng đi đúng hay sai.
+      </div>
+      <p class="meta" style="margin-top:2rem">Cảm ơn · Q&A</p>
+    </section>
+
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const progress = document.getElementById('progress');
+    const slideNum = document.getElementById('slideNum');
+    let current = 0;
+
+    function goTo(n) {
+      if (n < 0 || n >= slides.length) return;
+      slides[current].classList.remove('active', 'prev');
+      if (n > current) slides[current].classList.add('prev');
+      current = n;
+      slides[current].classList.add('active');
+      slides[current].classList.remove('prev');
+      progress.style.width = ((current + 1) / slides.length * 100) + '%';
+      slideNum.textContent = (current + 1) + ' / ' + slides.length;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        goTo(current + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        goTo(current - 1);
+      } else if (e.key === 'Home') goTo(0);
+      else if (e.key === 'End') goTo(slides.length - 1);
+      else if (e.key === 'f' || e.key === 'F') {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+      }
+    });
+
+    let touchX = 0;
+    document.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; });
+    document.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchX;
+      if (dx < -50) goTo(current + 1);
+      if (dx > 50) goTo(current - 1);
+    });
+
+    goTo(0);
+  </script>
+</body>
+</html>
